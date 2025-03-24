@@ -1,0 +1,46 @@
+
+# Enable cross-origin resource sharing
+Header set Access-Control-Allow-Origin "*"
+Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+
+# Set default charset
+AddDefaultCharset UTF-8
+
+# Disable directory listing
+Options -Indexes
+
+# Follow symbolic links
+Options +FollowSymLinks
+
+# Enable rewriting
+RewriteEngine On
+
+# Handle OPTIONS method
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# Prevent access to .php files in includes and config directories
+RewriteRule ^(includes|config)/ - [F,L]
+
+# Protect .htaccess file
+<Files .htaccess>
+Order Allow,Deny
+Deny from all
+</Files>
+
+# Protect files that reveal information
+<FilesMatch "(\.(bak|config|dist|inc|ini|log|sh|sql|swp)|~)$">
+Order Allow,Deny
+Deny from all
+</FilesMatch>
+
+# PHP settings
+php_flag display_errors Off
+php_flag log_errors On
+php_value error_log ../php_errors.log
+
+# Security headers
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "SAMEORIGIN"
+Header set X-XSS-Protection "1; mode=block"

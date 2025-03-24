@@ -1,7 +1,7 @@
 
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
-import { Airplane } from "lucide-react";
+import { Plane } from "lucide-react";
 
 interface LogoProps {
   className?: string;
@@ -22,7 +22,7 @@ export function Logo({
         className
       )}
     >
-      <Airplane 
+      <Plane 
         className={cn(
           "h-6 w-6 text-sky-600 transition-transform",
           iconClassName
