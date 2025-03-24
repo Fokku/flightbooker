@@ -1,16 +1,27 @@
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X, User } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, User, LogOut, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ui/logo";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);
@@ -18,6 +29,7 @@ export function Navbar() {
   const links = [
     { href: "/", label: "Home" },
     { href: "/search", label: "Search Flights" },
+    { href: "/globe", label: "Destinations" },
     { href: "/bookings", label: "Bookings" },
     { href: "/contact", label: "Contact" },
   ];
@@ -31,6 +43,16 @@ export function Navbar() {
       }
     };
 
+    // Check if user is logged in
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        setUser(JSON.parse(userData));
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    }
+
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -38,6 +60,32 @@ export function Navbar() {
   useEffect(() => {
     closeMenu();
   }, [location.pathname]);
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/backend/api/auth/logout.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.status) {
+        // Clear user data from localStorage
+        localStorage.removeItem('user');
+        setUser(null);
+        
+        toast.success("Logged out successfully");
+        navigate('/');
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error("Failed to connect to server. Please try again later.");
+    }
+  };
 
   return (
     <header
@@ -71,12 +119,50 @@ export function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
-            <Link to="/login">
-              <Button variant="outline" size="sm" className="rounded-full px-4">
-                <User className="h-4 w-4 mr-2" />
-                Login
-              </Button>
-            </Link>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="rounded-full px-4">
+                    <User className="h-4 w-4 mr-2" />
+                    {user.username}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/bookings" className="cursor-pointer">My Bookings</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="cursor-pointer">Profile Settings</Link>
+                  </DropdownMenuItem>
+                  {user.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="cursor-pointer">Admin Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" size="sm" className="rounded-full px-4">
+                    <User className="h-4 w-4 mr-2" />
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm" className="rounded-full px-4">
+                    Register
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -116,12 +202,48 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link to="/login">
-              <Button variant="outline" size="sm" className="w-full mt-4">
-                <User className="h-4 w-4 mr-2" />
-                Login
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <div className="pt-2 border-t border-gray-200">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Signed in as <span className="text-sky-600">{user.username}</span>
+                  </p>
+                  <Link to="/bookings" className="block py-2 text-sm font-medium text-gray-700 hover:text-sky-600">
+                    My Bookings
+                  </Link>
+                  <Link to="/profile" className="block py-2 text-sm font-medium text-gray-700 hover:text-sky-600">
+                    Profile Settings
+                  </Link>
+                  {user.role === 'admin' && (
+                    <Link to="/admin" className="block py-2 text-sm font-medium text-gray-700 hover:text-sky-600">
+                      Admin Dashboard
+                    </Link>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-4 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="pt-2 border-t border-gray-200 flex flex-col space-y-2">
+                <Link to="/login">
+                  <Button variant="outline" size="sm" className="w-full">
+                    <User className="h-4 w-4 mr-2" />
+                    Login
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm" className="w-full">
+                    Register
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </Container>

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/animations/FadeIn";
-import { Airplane } from "lucide-react";
+import { Plane } from "lucide-react";
 
 export function Globe() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -39,7 +39,7 @@ export function Globe() {
             
             <div className="mt-8 flex flex-wrap gap-4">
               <Button size="lg" className="rounded-full button-bounce">
-                <Airplane className="mr-2 h-4 w-4" />
+                <Plane className="mr-2 h-4 w-4" />
                 Explore Now
               </Button>
               <Button variant="outline" size="lg" className="rounded-full button-bounce">
@@ -106,10 +106,10 @@ export function Globe() {
                     
                     {/* Animated planes */}
                     <div className="absolute top-[30%] left-[40%] transform -translate-y-1/2 -translate-x-1/2 text-white animate-pulse-subtle">
-                      <Airplane className="h-3 w-3 rotate-45" />
+                      <Plane className="h-3 w-3 rotate-45" />
                     </div>
                     <div className="absolute top-[50%] right-[30%] transform -translate-y-1/2 -translate-x-1/2 text-white animate-pulse-subtle" style={{ animationDelay: '1s' }}>
-                      <Airplane className="h-3 w-3 -rotate-45" />
+                      <Plane className="h-3 w-3 -rotate-45" />
                     </div>
                   </div>
                 </div>
