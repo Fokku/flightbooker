@@ -7,6 +7,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
+import { useAuth } from "@/context/AuthContext";
 import { SlideUp } from "@/components/animations/SlideUp";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -37,6 +38,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   const form = useForm<RegisterFormValues>({
@@ -53,46 +55,29 @@ export default function Register() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/backend/api/auth/register.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: data.username,
-          email: data.email,
-          password: data.password
-        }),
-      });
+      const success = await register(data.username, data.email, data.password);
       
-      const result = await response.json();
-      
-      if (result.status) {
-        toast.success(result.message);
-        
-        // Redirect to login page after successful registration
-        setTimeout(() => {
-          navigate('/login');
-        }, 1000);
-      } else {
-        toast.error(result.message);
+      if (success) {
+        toast.success("Registration successful! You can now sign in.");
+        navigate('/login');
       }
     } catch (error) {
-      toast.error("Failed to connect to server. Please try again later.");
+      console.error("Registration error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <Navbar />
       
-      <main className="flex-1 py-16 md:py-24">
-        <Container className="max-w-md">
+      <main className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <Container className="max-w-md w-full">
           <SlideUp>
-            <Card>
-              <CardHeader>
+            <Card className="shadow-lg">
+              <CardHeader className="pb-6">
                 <CardTitle className="text-2xl text-center">Create an Account</CardTitle>
                 <CardDescription className="text-center">Sign up to start booking your flights</CardDescription>
               </CardHeader>

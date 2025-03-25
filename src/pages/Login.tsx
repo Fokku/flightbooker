@@ -1,12 +1,13 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
+import { useAuth } from "@/context/AuthContext";
 import { SlideUp } from "@/components/animations/SlideUp";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -32,7 +33,12 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get the redirect path from location state, or default to "/"
+  const from = location.state?.from?.pathname || "/";
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -46,45 +52,29 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/backend/api/auth/login.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+      const success = await login(data.email, data.password);
       
-      const result = await response.json();
-      
-      if (result.status) {
-        toast.success(result.message);
-        
-        // Store user info in localStorage
-        localStorage.setItem('user', JSON.stringify(result.data));
-        
-        // Redirect to home page after successful login
-        setTimeout(() => {
-          navigate('/');
-        }, 1000);
-      } else {
-        toast.error(result.message);
+      if (success) {
+        toast.success("Login successful!");
+        navigate(from, { replace: true });
       }
     } catch (error) {
-      toast.error("Failed to connect to server. Please try again later.");
+      console.error("Login error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <Navbar />
       
-      <main className="flex-1 py-16 md:py-24">
-        <Container className="max-w-md">
+      <main className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <Container className="max-w-md w-full">
           <SlideUp>
-            <Card>
-              <CardHeader>
+            <Card className="shadow-lg">
+              <CardHeader className="pb-6">
                 <CardTitle className="text-2xl text-center">Welcome Back</CardTitle>
                 <CardDescription className="text-center">Enter your credentials to sign in to your account</CardDescription>
               </CardHeader>

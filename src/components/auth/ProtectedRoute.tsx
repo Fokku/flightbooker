@@ -1,7 +1,8 @@
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -9,8 +10,16 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
-  const { isAuthenticated, isAdmin } = useAuth();
+  const { isAuthenticated, isAdmin, user } = useAuth();
   const location = useLocation();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast.error("Please log in to access this page");
+    } else if (requireAdmin && !isAdmin) {
+      toast.error("You need admin privileges to access this page");
+    }
+  }, [isAuthenticated, isAdmin, requireAdmin]);
 
   if (!isAuthenticated) {
     // Redirect to login if user is not authenticated

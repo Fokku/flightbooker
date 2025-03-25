@@ -13,6 +13,8 @@ import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import GlobePage from "./pages/GlobePage";
+import Profile from "./pages/Profile";
+import BookingConfirmation from "./pages/BookingConfirmation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +40,24 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Bookings />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/booking-confirmation" 
+              element={
+                <ProtectedRoute>
+                  <BookingConfirmation />
                 </ProtectedRoute>
               } 
             />

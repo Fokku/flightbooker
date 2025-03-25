@@ -23,21 +23,60 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Check if session is valid on initial load and after refresh
   useEffect(() => {
-    // Check if user data exists in localStorage
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
+    const checkSession = async () => {
       try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-      } catch (e) {
-        console.error("Error parsing user data", e);
-        localStorage.removeItem('user');
+        const response = await fetch('/backend/api/auth/check-session.php', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include' // Important for cookies/sessions
+        });
+        
+        const result = await response.json();
+        
+        if (result.status && result.data) {
+          setUser(result.data);
+          setIsAuthenticated(true);
+        } else {
+          // Clear any stored user data if session is invalid
+          setUser(null);
+          setIsAuthenticated(false);
+          localStorage.removeItem('user');
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkSession();
+  }, []);
+
+  // If session check fails, fall back to localStorage for user data
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      // Check if user data exists in localStorage as fallback
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) {
+        try {
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
+          setIsAuthenticated(true);
+        } catch (e) {
+          console.error("Error parsing user data", e);
+          localStorage.removeItem('user');
+        }
       }
     }
-  }, []);
+  }, [isLoading, isAuthenticated]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -46,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Important for cookies/sessions
         body: JSON.stringify({ email, password }),
       });
       
@@ -61,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
     } catch (error) {
+      console.error("Login error:", error);
       toast.error("Failed to connect to the server. Please try again later.");
       return false;
     }
@@ -86,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       }
     } catch (error) {
+      console.error("Registration error:", error);
       toast.error("Failed to connect to the server. Please try again later.");
       return false;
     }
@@ -98,21 +140,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Important for cookies/sessions
       });
       
       const result = await response.json();
       
+      // Always clear local state regardless of server response
+      setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem('user');
+      
       if (result.status) {
-        setUser(null);
-        setIsAuthenticated(false);
-        localStorage.removeItem('user');
         return true;
       } else {
         toast.error(result.message);
         return false;
       }
     } catch (error) {
-      toast.error("Failed to connect to the server. Please try again later.");
+      console.error("Logout error:", error);
+      toast.error("Failed to connect to the server. Your session has been cleared locally.");
+      
+      // Still clear local state on error
+      setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem('user');
+      
       return false;
     }
   };
