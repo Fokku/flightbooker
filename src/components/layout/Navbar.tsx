@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, User, LogOut, Globe } from "lucide-react";
@@ -7,6 +6,7 @@ import { Logo } from "@/components/ui/logo";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +19,7 @@ import {
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const { user, isAuthenticated, logout, isAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -43,16 +43,6 @@ export function Navbar() {
       }
     };
 
-    // Check if user is logged in
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-      }
-    }
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -63,27 +53,15 @@ export function Navbar() {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('/backend/api/auth/logout.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      const result = await response.json();
-      
-      if (result.status) {
-        // Clear user data from localStorage
-        localStorage.removeItem('user');
-        setUser(null);
-        
+      const success = await logout();
+
+      if (success) {
         toast.success("Logged out successfully");
-        navigate('/');
-      } else {
-        toast.error(result.message);
+        navigate("/");
       }
     } catch (error) {
-      toast.error("Failed to connect to server. Please try again later.");
+      toast.error("Failed to log out. Please try again.");
+      console.error("Logout error:", error);
     }
   };
 
@@ -119,10 +97,14 @@ export function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
-            {user ? (
+            {isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="rounded-full px-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full px-4"
+                  >
                     <User className="h-4 w-4 mr-2" />
                     {user.username}
                   </Button>
@@ -131,18 +113,27 @@ export function Navbar() {
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/bookings" className="cursor-pointer">My Bookings</Link>
+                    <Link to="/bookings" className="cursor-pointer">
+                      My Bookings
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/profile" className="cursor-pointer">Profile Settings</Link>
+                    <Link to="/profile" className="cursor-pointer">
+                      Profile Settings
+                    </Link>
                   </DropdownMenuItem>
-                  {user.role === 'admin' && (
+                  {isAdmin && (
                     <DropdownMenuItem asChild>
-                      <Link to="/admin" className="cursor-pointer">Admin Dashboard</Link>
+                      <Link to="/admin" className="cursor-pointer">
+                        Admin Dashboard
+                      </Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500">
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="cursor-pointer text-red-500"
+                  >
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout
                   </DropdownMenuItem>
@@ -151,7 +142,11 @@ export function Navbar() {
             ) : (
               <>
                 <Link to="/login">
-                  <Button variant="outline" size="sm" className="rounded-full px-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full px-4"
+                  >
                     <User className="h-4 w-4 mr-2" />
                     Login
                   </Button>
@@ -171,11 +166,7 @@ export function Navbar() {
             onClick={toggleMenu}
             aria-label="Toggle menu"
           >
-            {isOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
+            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </nav>
 
@@ -202,25 +193,35 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            {user ? (
+            {isAuthenticated && user ? (
               <>
                 <div className="pt-2 border-t border-gray-200">
                   <p className="text-sm font-medium text-gray-700 mb-2">
-                    Signed in as <span className="text-sky-600">{user.username}</span>
+                    Signed in as{" "}
+                    <span className="text-sky-600">{user.username}</span>
                   </p>
-                  <Link to="/bookings" className="block py-2 text-sm font-medium text-gray-700 hover:text-sky-600">
+                  <Link
+                    to="/bookings"
+                    className="block py-2 text-sm font-medium text-gray-700 hover:text-sky-600"
+                  >
                     My Bookings
                   </Link>
-                  <Link to="/profile" className="block py-2 text-sm font-medium text-gray-700 hover:text-sky-600">
+                  <Link
+                    to="/profile"
+                    className="block py-2 text-sm font-medium text-gray-700 hover:text-sky-600"
+                  >
                     Profile Settings
                   </Link>
-                  {user.role === 'admin' && (
-                    <Link to="/admin" className="block py-2 text-sm font-medium text-gray-700 hover:text-sky-600">
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      className="block py-2 text-sm font-medium text-gray-700 hover:text-sky-600"
+                    >
                       Admin Dashboard
                     </Link>
                   )}
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full mt-4 text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
                     onClick={handleLogout}
                   >

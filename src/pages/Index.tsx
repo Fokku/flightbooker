@@ -1,4 +1,3 @@
-
 import { Hero } from "@/components/home/Hero";
 import { Features } from "@/components/home/Features";
 import { Globe } from "@/components/home/Globe";
@@ -18,7 +17,9 @@ const Index = () => {
       <footer className="bg-gray-50 py-12 mt-20">
         <div className="container mx-auto px-4">
           <div className="text-center text-gray-500 text-sm">
-            <p>© 2023 SkyGlobe. All rights reserved.</p>
+            <p>
+              © {new Date().getFullYear()} Flight Booker. All rights reserved.
+            </p>
           </div>
         </div>
       </footer>

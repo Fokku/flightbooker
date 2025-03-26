@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -14,10 +13,10 @@ export function SlideUp({ children, delay = 0, className }: SlideUpProps) {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach(entry => {
+        entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setTimeout(() => {
-              entry.target.classList.add('animate-in');
+              entry.target.classList.add("animate-in");
             }, delay);
             observer.unobserve(entry.target);
           }
@@ -42,9 +41,12 @@ export function SlideUp({ children, delay = 0, className }: SlideUpProps) {
     <div
       ref={elementRef}
       className={cn(
-        "opacity-0 translate-y-8 transition-all duration-700 ease-out",
+        "opacity-50 translate-y-4 transition-all duration-500 ease-out",
         className
       )}
+      style={{
+        willChange: "opacity, transform",
+      }}
     >
       {children}
     </div>

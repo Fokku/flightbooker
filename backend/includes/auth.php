@@ -1,192 +1,250 @@
-
 <?php
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 
 // User authentication functions
-class Auth {
+class Auth
+{
     // Register a new user
-    public static function register($username, $email, $password) {
+    public static function register($username, $email, $password)
+    {
         $conn = connectDB();
-        
-        // Check if username or email already exists
-        $stmt = $conn->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
-        $stmt->bind_param("ss", $username, $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows > 0) {
+
+        if (!$conn) {
+            return ['status' => false, 'message' => 'Database connection error'];
+        }
+
+        try {
+            // Check if username or email already exists
+            $stmt = $conn->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
+            if (!$stmt) {
+                error_log("Prepare failed: " . $conn->error);
+                closeDB($conn);
+                return ['status' => false, 'message' => 'Database error'];
+            }
+
+            $stmt->bind_param("ss", $username, $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $stmt->close();
+                closeDB($conn);
+                return ['status' => false, 'message' => 'Username or email already exists'];
+            }
+
+            // Hash password
+            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+            // Insert new user
+            $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
+            if (!$stmt) {
+                error_log("Prepare failed: " . $conn->error);
+                closeDB($conn);
+                return ['status' => false, 'message' => 'Database error'];
+            }
+
+            $stmt->bind_param("sss", $username, $email, $hashedPassword);
+            $success = $stmt->execute();
+
             $stmt->close();
             closeDB($conn);
-            return ['status' => false, 'message' => 'Username or email already exists'];
-        }
-        
-        // Hash password
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        
-        // Insert new user
-        $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $username, $email, $hashedPassword);
-        $success = $stmt->execute();
-        
-        $stmt->close();
-        closeDB($conn);
-        
-        if ($success) {
-            return ['status' => true, 'message' => 'Registration successful'];
-        } else {
-            return ['status' => false, 'message' => 'Registration failed'];
+
+            if ($success) {
+                return ['status' => true, 'message' => 'Registration successful'];
+            } else {
+                return ['status' => false, 'message' => 'Registration failed'];
+            }
+        } catch (Exception $e) {
+            error_log("Registration error: " . $e->getMessage());
+            closeDB($conn);
+            return ['status' => false, 'message' => 'An error occurred during registration'];
         }
     }
-    
+
     // Login user
-    public static function login($email, $password) {
+    public static function login($identifier, $password, $useUsername = false)
+    {
         $conn = connectDB();
-        
-        // Get user with given email
-        $stmt = $conn->prepare("SELECT id, username, email, password, role FROM users WHERE email = ?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows === 0) {
+
+        if (!$conn) {
+            return ['status' => false, 'message' => 'Database connection error'];
+        }
+
+        try {
+            // Get user with given username or email
+            $field = $useUsername ? "username" : "email";
+            $stmt = $conn->prepare("SELECT id, username, email, password, role, email_verified FROM users WHERE $field = ?");
+            if (!$stmt) {
+                error_log("Prepare failed: " . $conn->error);
+                closeDB($conn);
+                return ['status' => false, 'message' => 'Database error'];
+            }
+
+            $stmt->bind_param("s", $identifier);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows === 0) {
+                $stmt->close();
+                closeDB($conn);
+                return ['status' => false, 'message' => 'Invalid credentials'];
+            }
+
+            $user = $result->fetch_assoc();
             $stmt->close();
             closeDB($conn);
-            return ['status' => false, 'message' => 'Invalid email or password'];
-        }
-        
-        $user = $result->fetch_assoc();
-        $stmt->close();
-        closeDB($conn);
-        
-        // Verify password
-        if (password_verify($password, $user['password'])) {
-            // Create session
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['role'] = $user['role'];
-            
-            return [
-                'status' => true, 
-                'message' => 'Login successful',
-                'user' => [
-                    'id' => $user['id'],
-                    'username' => $user['username'],
-                    'email' => $user['email'],
-                    'role' => $user['role']
-                ]
-            ];
-        } else {
-            return ['status' => false, 'message' => 'Invalid email or password'];
+
+            // Verify password
+            if (password_verify($password, $user['password'])) {
+                // Check if email is verified
+                if (!$user['email_verified']) {
+                    return [
+                        'status' => false,
+                        'message' => 'Email not verified',
+                        'needsVerification' => true,
+                        'userId' => $user['id'],
+                        'email' => $user['email']
+                    ];
+                }
+
+                // Create session
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['role'] = $user['role'];
+
+                return [
+                    'status' => true,
+                    'message' => 'Login successful',
+                    'user' => [
+                        'id' => $user['id'],
+                        'username' => $user['username'],
+                        'email' => $user['email'],
+                        'role' => $user['role']
+                    ]
+                ];
+            } else {
+                return ['status' => false, 'message' => 'Invalid credentials'];
+            }
+        } catch (Exception $e) {
+            error_log("Login error: " . $e->getMessage());
+            closeDB($conn);
+            return ['status' => false, 'message' => 'An error occurred during login'];
         }
     }
-    
+
     // Logout user
-    public static function logout() {
+    public static function logout()
+    {
         session_unset();
         session_destroy();
         return ['status' => true, 'message' => 'Logout successful'];
     }
-    
+
     // Check if user is logged in
-    public static function isLoggedIn() {
+    public static function isLoggedIn()
+    {
         return isset($_SESSION['user_id']);
     }
-    
+
     // Check if user is admin
-    public static function isAdmin() {
+    public static function isAdmin()
+    {
         return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
     }
-    
+
     // Get current user
-    public static function getCurrentUser() {
+    public static function getCurrentUser()
+    {
         if (!self::isLoggedIn()) {
             return null;
         }
-        
+
         $conn = connectDB();
         $stmt = $conn->prepare("SELECT id, username, email, role FROM users WHERE id = ?");
         $stmt->bind_param("i", $_SESSION['user_id']);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($result->num_rows === 0) {
             $stmt->close();
             closeDB($conn);
             return null;
         }
-        
+
         $user = $result->fetch_assoc();
         $stmt->close();
         closeDB($conn);
-        
+
         return $user;
     }
-    
+
     // Generate and store password reset token
-    public static function generateResetToken($email) {
+    public static function generateResetToken($email)
+    {
         $conn = connectDB();
-        
+
         // Check if email exists
         $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($result->num_rows === 0) {
             $stmt->close();
             closeDB($conn);
             return ['status' => false, 'message' => 'Email not found'];
         }
-        
+
         // Generate token
         $token = bin2hex(random_bytes(32));
         $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
-        
+
         // Store token
         $stmt = $conn->prepare("UPDATE users SET reset_token = ?, token_expiry = ? WHERE email = ?");
         $stmt->bind_param("sss", $token, $expiry, $email);
         $success = $stmt->execute();
-        
+
         $stmt->close();
         closeDB($conn);
-        
+
         if ($success) {
             return ['status' => true, 'message' => 'Reset token generated', 'token' => $token];
         } else {
             return ['status' => false, 'message' => 'Failed to generate reset token'];
         }
     }
-    
+
     // Verify reset token and change password
-    public static function resetPassword($token, $password) {
+    public static function resetPassword($token, $password)
+    {
         $conn = connectDB();
-        
+
         // Check if token exists and is valid
         $stmt = $conn->prepare("SELECT id FROM users WHERE reset_token = ? AND token_expiry > NOW()");
         $stmt->bind_param("s", $token);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         if ($result->num_rows === 0) {
             $stmt->close();
             closeDB($conn);
             return ['status' => false, 'message' => 'Invalid or expired token'];
         }
-        
+
         $user = $result->fetch_assoc();
-        
+
         // Hash new password
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        
+
         // Update password and clear token
         $stmt = $conn->prepare("UPDATE users SET password = ?, reset_token = NULL, token_expiry = NULL WHERE id = ?");
         $stmt->bind_param("si", $hashedPassword, $user['id']);
         $success = $stmt->execute();
-        
+
         $stmt->close();
         closeDB($conn);
-        
+
         if ($success) {
             return ['status' => true, 'message' => 'Password reset successful'];
         } else {
@@ -194,4 +252,3 @@ class Auth {
         }
     }
 }
-?>

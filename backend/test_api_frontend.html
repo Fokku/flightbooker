@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>API Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      pre {
+        background-color: #f5f5f5;
+        padding: 10px;
+        border-radius: 5px;
+        overflow-x: auto;
+      }
+      button {
+        padding: 10px 15px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      .result {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>API Test</h1>
+
+    <div>
+      <button id="testApi">Test User API (without auth)</button>
+      <button id="testSession">Test Session</button>
+      <button id="testApiWithCreds">Test API (with credentials)</button>
+    </div>
+
+    <div class="result">
+      <h3>Response:</h3>
+      <pre id="response">Click a button to test the API</pre>
+    </div>
+
+    <script>
+      document.getElementById("testApi").addEventListener("click", async () => {
+        try {
+          const response = await fetch(
+            "/websysproj/skyglobe-reservations/backend/api/bookings/user.php"
+          );
+          const text = await response.text();
+
+          try {
+            // Try to parse as JSON
+            const json = JSON.parse(text);
+            document.getElementById("response").textContent =
+              "Status: " +
+              response.status +
+              "\n" +
+              "Content-Type: " +
+              response.headers.get("content-type") +
+              "\n\n" +
+              JSON.stringify(json, null, 2);
+          } catch (e) {
+            // If not JSON, display as text
+            document.getElementById("response").textContent =
+              "Status: " +
+              response.status +
+              "\n" +
+              "Content-Type: " +
+              response.headers.get("content-type") +
+              "\n\n" +
+              text;
+          }
+        } catch (error) {
+          document.getElementById("response").textContent =
+            "Error: " + error.message;
+        }
+      });
+
+      document
+        .getElementById("testSession")
+        .addEventListener("click", async () => {
+          try {
+            const response = await fetch(
+              "/websysproj/skyglobe-reservations/backend/api/auth/check-session.php",
+              {
+                credentials: "include",
+              }
+            );
+            const text = await response.text();
+
+            try {
+              // Try to parse as JSON
+              const json = JSON.parse(text);
+              document.getElementById("response").textContent =
+                "Status: " +
+                response.status +
+                "\n" +
+                "Content-Type: " +
+                response.headers.get("content-type") +
+                "\n\n" +
+                JSON.stringify(json, null, 2);
+            } catch (e) {
+              // If not JSON, display as text
+              document.getElementById("response").textContent =
+                "Status: " +
+                response.status +
+                "\n" +
+                "Content-Type: " +
+                response.headers.get("content-type") +
+                "\n\n" +
+                text;
+            }
+          } catch (error) {
+            document.getElementById("response").textContent =
+              "Error: " + error.message;
+          }
+        });
+
+      document
+        .getElementById("testApiWithCreds")
+        .addEventListener("click", async () => {
+          try {
+            const response = await fetch(
+              "/websysproj/skyglobe-reservations/backend/api/bookings/user.php",
+              {
+                credentials: "include",
+              }
+            );
+            const text = await response.text();
+
+            try {
+              // Try to parse as JSON
+              const json = JSON.parse(text);
+              document.getElementById("response").textContent =
+                "Status: " +
+                response.status +
+                "\n" +
+                "Content-Type: " +
+                response.headers.get("content-type") +
+                "\n\n" +
+                JSON.stringify(json, null, 2);
+            } catch (e) {
+              // If not JSON, display as text
+              document.getElementById("response").textContent =
+                "Status: " +
+                response.status +
+                "\n" +
+                "Content-Type: " +
+                response.headers.get("content-type") +
+                "\n\n" +
+                text;
+            }
+          } catch (error) {
+            document.getElementById("response").textContent =
+              "Error: " + error.message;
+          }
+        });
+    </script>
+  </body>
+</html>

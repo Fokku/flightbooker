@@ -1,240 +1,152 @@
+# SkyGlobe Flight Reservation System
 
-# SkyGlobe Flight Booking System
-
-A modern flight booking platform with an interactive globe interface for selecting destinations.
+SkyGlobe is a flight reservation system that allows users to search for flights, book tickets, and manage their bookings.
 
 ## Features
 
-- Interactive globe for destination selection
-- Flight search and booking
-- User authentication
-- Admin dashboard for managing flights and bookings
+- User authentication (register, login, logout)
+- Flight search with various filters
+- Booking management
+- User profile management
 - Responsive design for all devices
-- PHP backend with MySQL database
-
-## Tech Stack
-
-- **Frontend**: React, TypeScript, Tailwind CSS, Shadcn UI
-- **Backend**: PHP, MySQL
-- **State Management**: React Query, Context API
-- **Form Handling**: React Hook Form, Zod
-- **Animations**: CSS Transitions
-
-## Setup Instructions for Ubuntu Server
-
-### 1. Server Prerequisites
-
-```bash
-# Update package list
-sudo apt update
-sudo apt upgrade -y
-
-# Install required packages
-sudo apt install -y nginx mysql-server php-fpm php-mysql php-curl php-json php-zip php-mbstring php-xml git nodejs npm
-
-# Enable services
-sudo systemctl enable nginx
-sudo systemctl enable mysql
-sudo systemctl enable php-fpm
-```
-
-### 2. Configure MySQL
-
-```bash
-# Secure MySQL installation
-sudo mysql_secure_installation
-
-# Access MySQL
-sudo mysql
-
-# Create database and user (in MySQL prompt)
-CREATE DATABASE flight_booking;
-CREATE USER 'flight_user'@'localhost' IDENTIFIED BY 'your_secure_password';
-GRANT ALL PRIVILEGES ON flight_booking.* TO 'flight_user'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
-```
-
-### 3. Clone and Set Up Project
-
-```bash
-# Navigate to web directory
-cd /var/www
-
-# Clone repository
-sudo git clone https://github.com/your-username/skyglobe-flight-booking.git
-cd skyglobe-flight-booking
-
-# Set proper permissions
-sudo chown -R www-data:www-data /var/www/skyglobe-flight-booking
-sudo chmod -R 755 /var/www/skyglobe-flight-booking
-```
-
-### 4. Configure Backend
-
-```bash
-# Navigate to backend config
-cd /var/www/skyglobe-flight-booking/backend/config
-
-# Edit database configuration
-sudo nano database.php
-
-# Update the database settings
-# define('DB_HOST', 'localhost');
-# define('DB_USER', 'flight_user');
-# define('DB_PASS', 'your_secure_password');
-# define('DB_NAME', 'flight_booking');
-
-# Import database schema
-mysql -u flight_user -p flight_booking < /var/www/skyglobe-flight-booking/database/schema.sql
-```
-
-### 5. Build Frontend
-
-```bash
-# Navigate to project root
-cd /var/www/skyglobe-flight-booking
-
-# Install dependencies and build
-sudo npm install
-sudo npm run build
-```
-
-### 6. Configure Nginx
-
-```bash
-# Create Nginx configuration
-sudo nano /etc/nginx/sites-available/skyglobe
-
-# Add the following configuration:
-# server {
-#     listen 80;
-#     server_name your-domain.com www.your-domain.com;
-#     root /var/www/skyglobe-flight-booking/dist;
-#
-#     index index.html index.php;
-#
-#     location / {
-#         try_files $uri $uri/ /index.html;
-#     }
-#
-#     location /backend/ {
-#         alias /var/www/skyglobe-flight-booking/backend/;
-#         try_files $uri $uri/ /index.php?$query_string;
-#
-#         location ~ \.php$ {
-#             include snippets/fastcgi-php.conf;
-#             fastcgi_param SCRIPT_FILENAME $request_filename;
-#             fastcgi_pass unix:/var/run/php/php-fpm.sock;
-#         }
-#     }
-#
-#     location ~ /\.ht {
-#         deny all;
-#     }
-# }
-
-# Enable site and test configuration
-sudo ln -s /etc/nginx/sites-available/skyglobe /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
-### 7. Set Up SSL (Optional but Recommended)
-
-```bash
-# Install Certbot
-sudo apt install -y certbot python3-certbot-nginx
-
-# Obtain SSL certificate
-sudo certbot --nginx -d your-domain.com -d www.your-domain.com
-
-# Certbot will update your Nginx configuration automatically
-```
-
-### 8. Set Up Automatic Deployment (Optional)
-
-```bash
-# Create deployment script
-sudo nano /var/www/deploy.sh
-
-# Add the following content:
-# #!/bin/bash
-# cd /var/www/skyglobe-flight-booking
-# git pull
-# npm install
-# npm run build
-# sudo systemctl restart nginx
-
-# Make script executable
-sudo chmod +x /var/www/deploy.sh
-
-# Create cron job (if you want automatic updates)
-sudo crontab -e
-
-# Add the following line for daily updates at 2 AM:
-# 0 2 * * * /var/www/deploy.sh >> /var/log/deploy.log 2>&1
-```
-
-### 9. Testing the Installation
-
-- Visit your domain in a web browser
-- Test login/registration functionality
-- Verify backend API connectivity
-- Check database connection
-
-## Development Setup
-
-If you want to set up the project for local development:
-
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Set up a local MySQL database and import the schema
-4. Configure `/backend/config/database.php` for local development
-5. Start the development server: `npm run dev`
 
 ## Project Structure
 
-```
-├── backend/              # PHP backend files
-│   ├── api/              # API endpoints
-│   ├── config/           # Configuration files
-│   └── includes/         # Reusable PHP components
-├── database/             # Database schema and migrations
-├── public/               # Static files
-└── src/                  # React frontend source code
-    ├── components/       # UI components
-    ├── context/          # React context providers
-    ├── hooks/            # Custom React hooks
-    ├── lib/              # Utility functions
-    └── pages/            # Page components
-```
+The project is divided into two main parts:
 
-## Troubleshooting
+1. **Frontend**: React/TypeScript application built with Vite
+2. **Backend**: PHP API for data management and authentication
 
-### Common Issues
+## Prerequisites
 
-1. **Database Connection Error**:
-   - Check database credentials in `backend/config/database.php`
-   - Ensure MySQL service is running: `sudo systemctl status mysql`
-   - Verify user permissions: `SHOW GRANTS FOR 'flight_user'@'localhost';`
+- Node.js 16+
+- PHP 7.4+
+- MySQL 5.7+
+- Composer (for PHP dependencies)
 
-2. **PHP Errors**:
-   - Check PHP error logs: `sudo tail -f /var/log/nginx/error.log`
-   - Verify PHP version compatibility: `php -v`
+## Setup and Installation
 
-3. **Frontend Not Loading**:
-   - Check Nginx configuration
-   - Inspect browser console for JavaScript errors
-   - Verify built files in `/dist` directory
+### Database Setup
 
-### Support
+1. Create a new MySQL database for the project
+2. Import the SQL schema from `backend/sql/schema.sql`
+3. (Optional) Import sample data from `backend/sql/sample_data.sql`
 
-For additional help, create an issue in the repository or contact the maintainers.
+### Backend Setup
 
-## Contributing
+1. Navigate to the backend directory:
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+   ```
+   cd backend
+   ```
+
+2. Copy the example configuration:
+
+   ```
+   cp config/config.example.php config/config.php
+   ```
+
+3. Edit `config/config.php` to add your database credentials
+
+4. Configure your web server (Apache/Nginx) to serve the backend directory, or use PHP's built-in server:
+   ```
+   php -S localhost:8000
+   ```
+
+### Frontend Setup
+
+1. Install dependencies:
+
+   ```
+   npm install
+   ```
+
+2. Make sure the `.env` file has the correct API URL:
+
+   ```
+   VITE_API_URL=http://localhost:8000
+   ```
+
+3. Start the development server:
+
+   ```
+   npm run dev
+   ```
+
+4. Build for production:
+   ```
+   npm run build
+   ```
+
+## Integration between Frontend and Backend
+
+The frontend communicates with the PHP backend through API calls. The main integration points are:
+
+1. **Authentication**: Login, register, and session management
+2. **Flight Search**: Query available flights based on criteria
+3. **Booking Management**: Creating, viewing, and canceling bookings
+4. **User Profile**: Viewing and updating user information
+
+### API Endpoints
+
+The backend provides the following main API endpoints:
+
+- **Authentication**
+
+  - `POST /api/auth/login.php`: User login
+  - `POST /api/auth/register.php`: User registration
+  - `POST /api/auth/logout.php`: User logout
+  - `GET /api/auth/check-session.php`: Check if session is valid
+
+- **Flights**
+
+  - `POST /api/flights/search.php`: Search flights
+  - `GET /api/flights/get.php?id={id}`: Get flight details
+
+- **Bookings**
+
+  - `POST /api/bookings/create.php`: Create a new booking
+  - `GET /api/bookings/user.php`: Get user's bookings
+  - `GET /api/bookings/get.php?id={id}`: Get booking details
+  - `POST /api/bookings/cancel.php`: Cancel a booking
+
+- **User Profile**
+  - `GET /api/users/profile.php`: Get user profile
+  - `POST /api/users/update.php`: Update user profile
+  - `POST /api/users/change-password.php`: Change user password
+
+## Development
+
+The frontend is built using:
+
+- React
+- TypeScript
+- Tailwind CSS for styling
+- React Router for navigation
+- Context API for state management
+
+The backend is built using:
+
+- PHP for API endpoints
+- MySQL for data storage
+- Session-based authentication
+
+## Deployment
+
+### Frontend Deployment
+
+1. Build the frontend:
+
+   ```
+   npm run build
+   ```
+
+2. Deploy the contents of the `dist` directory to your web server
+
+### Backend Deployment
+
+1. Deploy the backend directory to a PHP-capable server
+2. Configure the server to properly handle API requests
 
 ## License
 

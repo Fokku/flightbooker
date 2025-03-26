@@ -1,6 +1,12 @@
-
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { toast } from "sonner";
+import { authApi } from "@/lib/api";
 
 interface User {
   id: number;
@@ -13,8 +19,16 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (username: string, email: string, password: string) => Promise<boolean>;
+  login: (
+    username: string,
+    password: string
+  ) => Promise<boolean | { needsVerification: boolean; email: string }>;
+  register: (
+    username: string,
+    email: string,
+    password: string
+  ) => Promise<boolean>;
+  verifyEmail: (email: string, otp: string) => Promise<boolean>;
   logout: () => Promise<boolean>;
 }
 
@@ -29,24 +43,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await fetch('/backend/api/auth/check-session.php', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include' // Important for cookies/sessions
-        });
-        
-        const result = await response.json();
-        
+        const result = await authApi.checkSession();
+
         if (result.status && result.data) {
-          setUser(result.data);
+          setUser(result.data as User);
           setIsAuthenticated(true);
         } else {
           // Clear any stored user data if session is invalid
           setUser(null);
           setIsAuthenticated(false);
-          localStorage.removeItem('user');
+          localStorage.removeItem("user");
         }
       } catch (error) {
         console.error("Session check error:", error);
@@ -56,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     };
-    
+
     checkSession();
   }, []);
 
@@ -64,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       // Check if user data exists in localStorage as fallback
-      const savedUser = localStorage.getItem('user');
+      const savedUser = localStorage.getItem("user");
       if (savedUser) {
         try {
           const parsedUser = JSON.parse(savedUser);
@@ -72,30 +78,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAuthenticated(true);
         } catch (e) {
           console.error("Error parsing user data", e);
-          localStorage.removeItem('user');
+          localStorage.removeItem("user");
         }
       }
     }
   }, [isLoading, isAuthenticated]);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (username: string, password: string) => {
     try {
-      const response = await fetch('/backend/api/auth/login.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Important for cookies/sessions
-        body: JSON.stringify({ email, password }),
-      });
-      
-      const result = await response.json();
-      
+      const result = await authApi.login(username, password);
+
       if (result.status) {
-        setUser(result.data);
+        setUser(result.data as User);
         setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(result.data));
+        localStorage.setItem("user", JSON.stringify(result.data));
         return true;
+      } else if (result.data && result.data.needsVerification) {
+        toast.error("Please verify your email address");
+        return {
+          needsVerification: true,
+          email: result.data.email,
+        };
       } else {
         toast.error(result.message);
         return false;
@@ -107,18 +110,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (username: string, email: string, password: string): Promise<boolean> => {
+  const register = async (
+    username: string,
+    email: string,
+    password: string
+  ): Promise<boolean> => {
     try {
-      const response = await fetch('/backend/api/auth/register.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, email, password }),
-      });
-      
-      const result = await response.json();
-      
+      const result = await authApi.register(username, email, password);
+
       if (result.status) {
         toast.success(result.message);
         return true;
@@ -133,23 +132,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const verifyEmail = async (email: string, otp: string): Promise<boolean> => {
+    try {
+      const result = await authApi.verifyEmail(email, otp);
+
+      if (result.status) {
+        toast.success("Email verified successfully");
+        return true;
+      } else {
+        toast.error(result.message || "Verification failed");
+        return false;
+      }
+    } catch (error) {
+      console.error("Verification error:", error);
+      toast.error("Failed to connect to the server. Please try again later.");
+      return false;
+    }
+  };
+
   const logout = async (): Promise<boolean> => {
     try {
-      const response = await fetch('/backend/api/auth/logout.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Important for cookies/sessions
-      });
-      
-      const result = await response.json();
-      
+      const result = await authApi.logout();
+
       // Always clear local state regardless of server response
       setUser(null);
       setIsAuthenticated(false);
-      localStorage.removeItem('user');
-      
+      localStorage.removeItem("user");
+
       if (result.status) {
         return true;
       } else {
@@ -158,13 +167,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Logout error:", error);
-      toast.error("Failed to connect to the server. Your session has been cleared locally.");
-      
+      toast.error(
+        "Failed to connect to the server. Your session has been cleared locally."
+      );
+
       // Still clear local state on error
       setUser(null);
       setIsAuthenticated(false);
-      localStorage.removeItem('user');
-      
+      localStorage.removeItem("user");
+
       return false;
     }
   };
@@ -174,9 +185,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated,
-        isAdmin: user?.role === 'admin',
+        isAdmin: user?.role === "admin",
         login,
         register,
+        verifyEmail,
         logout,
       }}
     >
