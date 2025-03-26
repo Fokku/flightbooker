@@ -373,7 +373,7 @@ const BookingsPage = () => {
                             <div>
                               <p className="text-sm text-gray-500">Total</p>
                               <p className="font-medium text-sky-600">
-                                ${booking.total_price.toFixed(2)}
+                                ${Number(booking.total_price).toFixed(2)}
                               </p>
                             </div>
                           </div>
@@ -560,7 +560,7 @@ const BookingsPage = () => {
                             <div>
                               <p className="text-sm text-gray-500">Total</p>
                               <p className="font-medium text-gray-600">
-                                ${booking.total_price.toFixed(2)}
+                                ${Number(booking.total_price).toFixed(2)}
                               </p>
                             </div>
                           </div>

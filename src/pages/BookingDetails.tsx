@@ -21,7 +21,6 @@ import {
   Download,
   Share2,
   ShieldCheck,
-  Utensils,
   Luggage,
   Wifi,
   AlertCircle,
@@ -385,7 +384,7 @@ export default function BookingDetailsPage() {
                     <div className="flex items-center">
                       <Ticket className="h-4 w-4 text-gray-400 mr-2" />
                       <p className="font-semibold text-sky-600">
-                        ${booking.total_price}
+                        ${Number(booking.total_price).toFixed(2)}
                       </p>
                     </div>
                   </div>
