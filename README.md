@@ -1,6 +1,6 @@
-# SkyGlobe Flight Reservation System
+# INF1005 Flight Booking Webapp
 
-SkyGlobe is a flight reservation system that allows users to search for flights, book tickets, and manage their bookings with a modern, responsive interface.
+INF1005 Flight Booking is a flight reservation system that allows users to search for flights, book tickets, and manage their bookings with a modern, responsive interface.
 
 ## Features
 

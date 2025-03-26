@@ -1,7 +1,6 @@
+# INF1005 Flight Booking PHP Backend
 
-# SkyGlobe PHP Backend
-
-This directory contains the PHP backend for the SkyGlobe flight booking application.
+This directory contains the PHP backend for the INF1005 Flight Booking application.
 
 ## Directory Structure
 
@@ -31,25 +30,31 @@ This directory contains the PHP backend for the SkyGlobe flight booking applicat
 ## API Endpoints
 
 ### Authentication
+
 - POST `/api/auth/register.php`: Register a new user
 - POST `/api/auth/login.php`: Log in a user
 - POST `/api/auth/logout.php`: Log out a user
 
 ### Flights
+
 - GET `/api/flights/search.php`: Search for flights
 - GET `/api/flights/details.php`: Get flight details
 
 ### Bookings
+
 - POST `/api/bookings/create.php`: Create a new booking
 - GET `/api/bookings/list.php`: Get user's bookings
 
 ### Contact
+
 - POST `/api/contact/submit.php`: Submit a contact form
 
 ### FAQ
+
 - GET `/api/faq/list.php`: Get list of FAQs
 
 ### Admin - Flights
+
 - GET `/api/admin/flights/list.php`: Get all flights
 - POST `/api/admin/flights/create.php`: Create a new flight
 - PUT `/api/admin/flights/update.php`: Update a flight
